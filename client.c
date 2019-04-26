@@ -1,6 +1,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+
+void commun(int sock);
 
 int main(int argc,char **argv){
 	
@@ -13,7 +17,18 @@ int main(int argc,char **argv){
 	
 	//printf("sock = %d \n",sock);
 	connect(sock,(struct sockaddr*)&target,sizeof(target));
+	commun(sock);
 	close(sock);
 	
 	return 0;
+}
+
+void commun(int sock){
+	char buf[256];
+	int len_r;
+	char *message = "konnitiha server";
+	send(sock,message,strlen(message),0);
+	len_r = recv(sock,buf,256,0);
+	buf[len_r] = '\0';
+	printf("%s\n",buf);
 }
