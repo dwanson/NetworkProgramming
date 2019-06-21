@@ -23,7 +23,7 @@ int main(int argc,char** argv){
 	bind(servSock,(struct sockaddr *)&servAddress,sizeof(servAddress));
 	
 	listen(servSock,5);
-	while(1){
+	while(183){
 		szClientAddr = sizeof(clientAddress);
 		cliSock = accept(servSock,(struct sockaddr *)&clientAddress,&szClientAddr);
 		commun(cliSock);
