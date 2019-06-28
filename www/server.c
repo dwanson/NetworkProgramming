@@ -39,9 +39,21 @@ void DieWithError(char *errorMessage){
 }
 void commun(int sock){
 	char buf[BUF_SIZE];
+	char respons[BUF_SIZE];
 	int len_r;
-	if((len_r=recv(sock,buf,BUF_SIZE,0))<=0)DieWithError("recv()failed");
-	buf[len_r]='\0';
-	printf("%s\n",buf);
-	if(send(sock,buf,strlen(buf),0)!=strlen(buf))DieWithError("send() sent amessage of unexpected bytes");
+	while((len_r=recv(sock,buf,BUF_SIZE,0)) > 0){
+		buf[len_r]='\0';
+		printf("%s\n",buf);
+		if(strstr(buf,"\r\n\r\n")){
+			break;
+		}
+	}
+	if(len_r <= 0){
+		DieWithError("received() failed.");
+	}
+	printf("received HTTP request.\n");
+	sprintf(respons,"HTTP/1.1 200 OK\r\n");
+	if(send(sock, respons, strlen(respons),0) != strlen(respons)){
+		DieWithError("dfgsth");
+	}
 }
