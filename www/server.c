@@ -10,26 +10,33 @@
 void commun(int);
 void DieWithError(char *);
 int main(int argc,char** argv){
-	
-	int cliSock;
-	int servSock = socket(PF_INET,SOCK_STREAM,0);
-	struct sockaddr_in servAddress;
 	struct sockaddr_in clientAddress;
-	socklen_t szClientAddr;
-	servAddress.sin_family = AF_INET;
-	servAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	servAddress.sin_port = htons(80);
-	
-	bind(servSock,(struct sockaddr *)&servAddress,sizeof(servAddress));
-	
-	listen(servSock,5);
-	while(183){
+	unsigned int szClientAddr;
+	int cliSock;
+
+	int servSock = socket(PF_INET, SOCK_STREAM, 0);
+    if (servSock < 0)
+        DieWithError("socket() failed");
+    
+    struct sockaddr_in servAddress;
+    servAddress.sin_family = AF_INET;
+    servAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+    servAddress.sin_port = htons(80);
+
+	bind(servSock, (struct sockaddr*)&servAddress, sizeof(servAddress));
+
+	listen(servSock, 5);
+
+	while (1) {
 		szClientAddr = sizeof(clientAddress);
-		cliSock = accept(servSock,(struct sockaddr *)&clientAddress,&szClientAddr);
+		cliSock = accept(servSock, (struct sockaddr *)&clientAddress, &szClientAddr);
+
 		commun(cliSock);
+
 		close(cliSock);
 	}
-	close(servSock);
+
+    close(servSock);
 	return 0;
 }
 
@@ -38,22 +45,49 @@ void DieWithError(char *errorMessage){
 	exit(1);
 }
 void commun(int sock){
-	char buf[BUF_SIZE];
-	char respons[BUF_SIZE];
-	int len_r;
-	while((len_r=recv(sock,buf,BUF_SIZE,0)) > 0){
-		buf[len_r]='\0';
-		printf("%s\n",buf);
-		if(strstr(buf,"\r\n\r\n")){
-			break;
-		}
+    char buf[BUF_SIZE];
+	char buf_old[BUF_SIZE];
+	char buf2[BUF_SIZE];
+    int len_r;
+	char response[BUF_SIZE];
+	buf_old[0] = '\0';
+	
+    while((len_r = recv(sock, buf, BUF_SIZE, 0)) > 0){
+        buf[len_r] = '\0';
+        sprintf(buf2,"%s%s", buf_old,buf);
+        if (strstr(buf2, "\r\n\r\n")) {
+            break;
+        }
+    	sprintf(buf_old,"%s",buf);
+    }
+
+	if (len_r <= 0){
+        DieWithError("received() failed.");
 	}
-	if(len_r <= 0){
-		DieWithError("received() failed.");
+    printf("received HTTP Request.\n");
+
+    sprintf(response, "HTTP/1.1 200 OK\r\n");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
 	}
-	printf("received HTTP request.\n");
-	sprintf(respons,"HTTP/1.1 200 OK\r\n");
-	if(send(sock, respons, strlen(respons),0) != strlen(respons)){
-		DieWithError("dfgsth");
+    sprintf(response, "Content-Type: text/html; charset=utf-8\r\n");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
+	}
+    sprintf(response, "\r\n");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
+	}
+    sprintf(response, "<!DOCTYPE html><html><head><title>");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
+	}
+    sprintf(response, "ネットワークプログラミングのwebサイト");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
+	}
+    sprintf(response, "</title></head><body>ネットワークダイスキ</body></html>");
+	if(send(sock, response, strlen(response), 0) != strlen(response)){
+        DieWithError("send() sent a message of unexpected bytes");
 	}
 }
