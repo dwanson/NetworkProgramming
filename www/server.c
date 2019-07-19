@@ -1,10 +1,10 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<sys/socket.h>
-#include<arpa/inet.h>
-#include<unistd.h>
-#include<string.h>
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <regex.h>
 #define BUF_SIZE 256
 
 void commun(int);
@@ -48,11 +48,25 @@ void commun(int sock){
     char buf[BUF_SIZE];
 	char buf_old[BUF_SIZE];
 	char buf2[BUF_SIZE];
+	char result[100];
+	char *uri;
+	result[0] = '\n';
     int len_r;
 	char response[BUF_SIZE];
+	regex_t regBuf;
+	const char *pattern = "GET[^\\n]+HTTP";
+	regmatch_t regMatch[1];
+	if(regcomp(&regBuf,pattern,REG_EXTENDED | REG_NEWLINE)!=0){
+		DieWithError("regcomp failed");
+	}
 	buf_old[0] = '\0';
 	
     while((len_r = recv(sock, buf, BUF_SIZE, 0)) > 0){
+    	if(regexec(&regBuf,buf2,1,regMatch,0) != 0){
+    		int startIndex = regMatch[0].rm_so;
+    		int endIndex = regMatch[0].rm_so;
+    		strncpy(result,buf2 + startIndex,endIndex - startIndex);
+    	}
         buf[len_r] = '\0';
         sprintf(buf2,"%s%s", buf_old,buf);
         if (strstr(buf2, "\r\n\r\n")) {
@@ -60,6 +74,15 @@ void commun(int sock){
         }
     	sprintf(buf_old,"%s",buf);
     }
+	if (result[0] != '\0') {
+		uri = strtok(uri, " ");
+		uri = strtok(NULL, " ");
+		printf("%s¥n", uri);
+	} else {
+		DieWithError("No URI");
+	}
+
+	regfree(&regBuf);
 
 	if (len_r <= 0){
         DieWithError("received() failed.");
